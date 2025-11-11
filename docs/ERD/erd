@@ -144,6 +144,9 @@ Table order_services {
   }
 }
 
+//Таблица promotions предназначена для управления промоакциями и системами скидок в приложении автомойки.
+//INSERT INTO promotions (name, discount_type, discount_value, valid_from, valid_until)
+//  VALUES ('Зимняя акция', 'percentage', 20.00, '2024-12-01', '2025-02-28');
 Table promotions {
   id uuid [primary key]
   name varchar(255) [not null]
