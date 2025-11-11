@@ -1,0 +1,63 @@
+@startuml
+!theme plain
+
+title Статусная модель заказа автомойки
+
+state "Черновик" as draft
+
+state "Ожидание оплаты" as pending_payment {
+  state "Создан" as created
+  state "Ожидает оплаты онлайн" as awaiting_online
+}
+
+state "Оплачен" as paid
+
+state "В работе" as in_progress {
+  state "Подтвержден" as confirmed
+  state "Авто на мойке" as car_in_wash
+  state "Выполняется" as washing
+}
+
+state "Завершен" as completed {
+  state "Выполнен" as done
+  state "Ожидает отзыва" as awaiting_review
+}
+
+state "Отменен" as cancelled {
+  state "Отменен клиентом" as cancelled_by_client
+  state "Отменен системой" as cancelled_by_system
+  state "Отменен сотрудником" as cancelled_by_staff
+  state "Неявка" as no_show
+}
+
+[*] --> draft
+
+draft --> created : клиент создал заказ
+
+created --> awaiting_online : выбран онлайн-платеж
+created --> paid : выбран наличный расчет\n или кассир подтвердил оплату
+
+awaiting_online --> paid : успешная оплата
+awaiting_online --> cancelled_by_client : клиент отменил до оплаты
+
+paid --> confirmed : мойщик принял заказ
+paid --> cancelled_by_client : клиент отменил\n до начала выполнения
+paid --> no_show : клиент не явился\n в течение 15 минут
+
+confirmed --> car_in_wash : авто заехало в бокс
+car_in_wash --> washing : начата мойка
+washing --> done : услуги выполнены
+
+done --> awaiting_review : уведомление отправлено
+awaiting_review --> [*] : отзыв оставлен\n или время истекло
+
+cancelled_by_client --> [*]
+cancelled_by_system --> [*]
+cancelled_by_staff --> [*]
+no_show --> [*]
+
+paid --> cancelled_by_system : автоматическая отмена\n(превышено время ожидания)
+created --> cancelled_by_system : автоматическая отмена\n(не оплачен в течение 10 мин)
+awaiting_online --> cancelled_by_system : автоматическая отмена\n(платеж не прошел)
+
+@enduml

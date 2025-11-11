@@ -1,0 +1,57 @@
+@startuml
+!theme plain
+
+actor "Клиент" as Client
+participant "Мобильное\nприложение" as App
+participant "Сервер\nбэкенда" as Server
+participant "База\nданных" as DB
+participant "Платежный\nшлюз" as Payment
+participant "Система 1С" as System1C
+participant "Сервер\nуведомлений" as Notify
+
+== Инициализация и выбор услуг ==
+
+Client -> App: Открывает приложение
+App -> Server: Запрос списка моек/акций
+Server -> DB: SELECT мойки, боксы, акции
+DB --> Server: Данные моек
+Server --> App: Список моек и акций
+App --> Client: Показывает интерфейс выбора
+
+Client -> App: Выбирает мойку, бокс, время,\nуслугу (легк/джип), доп. услуги
+App -> Server: Проверка доступности слота
+Server -> DB: UPDATE Блокировка слота\nна 10 минут
+DB --> Server: OK
+Server --> App: Слот доступен
+App --> Client: Показывает итоговую стоимость
+
+== Создание и оплата заказа ==
+
+Client -> App: Подтверждает заказ
+App -> Server: POST /orders (статус: "Создан")
+Server -> DB: INSERT Заказ
+DB --> Server: ID заказа
+Server --> App: Заказ создан (ID)
+
+Client -> App: Нажимает "Оплатить онлайн"
+App -> Server: POST /payment/init
+Server -> Payment: createPaymentSession(order_id, amount)
+Payment --> Server: payment_url
+Server --> App: payment_data
+App -> Payment: Перенаправление на оплату
+Payment --> Client: Форма ввода карты
+Client -> Payment: Вводит данные, подтверждает
+Payment --> Server: webhook: payment_success
+Server -> DB: UPDATE Заказ\nстатус = "Оплачен"
+Server -> System1C: exportOrder(order_data)
+Server -> Server: calculateBonus(bonus_points)
+
+== Уведомления и завершение ==
+
+Server -> Notify: sendPush(client_id, "Заказ оплачен")
+Notify -> App: Push-уведомление
+App --> Client: Уведомление "Заказ оплачен"
+
+Server -> DB: UPDATE Статистика\nзагруженность моек
+
+@enduml

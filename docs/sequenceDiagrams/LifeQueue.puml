@@ -1,0 +1,28 @@
+@startuml
+!theme plain
+
+actor "Кассир" as Cashier
+participant "Веб-админка" as Admin
+participant "Сервер\nбэкенда" as Server
+participant "База\nданных" as DB
+participant "Сервер\nуведомлений" as Notify
+
+Cashier -> Admin: Входит в систему
+Admin -> Server: Запрос текущей загрузки
+Server -> DB: SELECT живая очередь
+DB --> Server: Данные очереди
+Server --> Admin: Текущее состояние
+
+Cashier -> Admin: Создает заказ для "живой очереди"\nВыбирает свободный бокс
+Admin -> Server: POST /orders/queue
+Server -> DB: INSERT Заказ (статус: "Оплачен")
+DB --> Server: ID заказа
+Server --> Admin: Заказ создан
+
+Admin -> Server: POST /notify/washer
+Server -> Notify: sendPush(washer_id, "Новый заказ")
+Notify --> Admin: OK
+
+Admin --> Cashier: "Заказ создан\nМойщик уведомлен"
+
+@enduml

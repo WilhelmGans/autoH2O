@@ -1,27 +1,499 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "car",
-    "description": "Title",
+    "title": "Car Wash API",
+    "description": "API for car wash management system",
     "version": "1.0.0"
   },
   "host": "localhost:8080",
   "basePath": "/v1",
+  "schemes": ["https"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
   "tags": [
     {
+      "name": "auth",
+      "description": "Authentication operations"
+    },
+    {
+      "name": "users",
+      "description": "User management"
+    },
+    {
+      "name": "carwashes",
+      "description": "Car wash locations management"
+    },
+    {
+      "name": "boxes",
+      "description": "Wash boxes management"
+    },
+    {
+      "name": "services",
+      "description": "Services and pricing"
+    },
+    {
+      "name": "orders",
+      "description": "Order management"
+    },
+    {
+      "name": "promotions",
+      "description": "Promotions and discounts"
+    },
+    {
+      "name": "bonuses",
+      "description": "Bonus program"
+    },
+    {
+      "name": "reviews",
+      "description": "Reviews and ratings"
+    },
+    {
+      "name": "analytics",
+      "description": "Statistics and analytics"
+    },
+    {
       "name": "cars",
-      "description": "Everything about your car"
+      "description": "Customer cars management"
     }
   ],
   "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Login with phone number",
+        "description": "Send SMS code for authentication",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PhoneLoginRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SMS code sent successfully",
+            "schema": {
+              "$ref": "#/definitions/LoginResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid phone number",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/auth/verify": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Verify SMS code",
+        "description": "Verify SMS code and get access token",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/VerifyCodeRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully verified",
+            "schema": {
+              "$ref": "#/definitions/AuthResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid code",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/carwashes": {
+      "get": {
+        "tags": ["carwashes"],
+        "summary": "Get all car washes",
+        "description": "Returns list of all car washes with locations",
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/CarWashResponse"
+              }
+            }
+          }
+        },
+        "security": [{"auth": ["read:carwashes"]}]
+      }
+    },
+    "/carwashes/{carwashId}/boxes": {
+      "get": {
+        "tags": ["boxes"],
+        "summary": "Get available boxes",
+        "description": "Get available boxes for specific car wash with time slots",
+        "parameters": [
+          {
+            "name": "carwashId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "format": "date"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/BoxAvailabilityResponse"
+              }
+            }
+          },
+          "404": {
+            "description": "Car wash not found",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [{"auth": ["read:boxes"]}]
+      }
+    },
+    "/services": {
+      "get": {
+        "tags": ["services"],
+        "summary": "Get all services",
+        "description": "Returns list of all available services",
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ServiceResponse"
+              }
+            }
+          }
+        },
+        "security": [{"auth": ["read:services"]}]
+      }
+    },
+    "/orders": {
+      "post": {
+        "tags": ["orders"],
+        "summary": "Create new order",
+        "description": "Create new car wash order with selected services",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/OrderRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Order created successfully",
+            "schema": {
+              "$ref": "#/definitions/OrderResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid order data",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [{"auth": ["write:orders"]}]
+      }
+    },
+    "/orders/{orderId}": {
+      "get": {
+        "tags": ["orders"],
+        "summary": "Get order details",
+        "description": "Returns order details by ID",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/OrderResponse"
+            }
+          },
+          "404": {
+            "description": "Order not found",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [{"auth": ["read:orders"]}]
+      },
+      "put": {
+        "tags": ["orders"],
+        "summary": "Update order status",
+        "description": "Update order status (for washers and staff)",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/OrderStatusUpdate"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status updated successfully",
+            "schema": {
+              "$ref": "#/definitions/OrderResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status transition",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [{"auth": ["write:orders"]}]
+      },
+      "delete": {
+        "tags": ["orders"],
+        "summary": "Cancel order",
+        "description": "Cancel order before execution starts",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order cancelled successfully"
+          },
+          "400": {
+            "description": "Cannot cancel order",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [{"auth": ["write:orders"]}]
+      }
+    },
+    "/orders/{orderId}/payment": {
+      "post": {
+        "tags": ["orders"],
+        "summary": "Process payment",
+        "description": "Process online payment for order",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PaymentRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment processed successfully",
+            "schema": {
+              "$ref": "#/definitions/PaymentResponse"
+            }
+          },
+          "400": {
+            "description": "Payment failed",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [{"auth": ["write:orders"]}]
+      }
+    },
+    "/promotions": {
+      "get": {
+        "tags": ["promotions"],
+        "summary": "Get active promotions",
+        "description": "Returns list of active promotions",
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PromotionResponse"
+              }
+            }
+          }
+        },
+        "security": [{"auth": ["read:promotions"]}]
+      }
+    },
+    "/bonuses/balance": {
+      "get": {
+        "tags": ["bonuses"],
+        "summary": "Get bonus balance",
+        "description": "Returns user's bonus balance",
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/BonusBalanceResponse"
+            }
+          }
+        },
+        "security": [{"auth": ["read:bonuses"]}]
+      }
+    },
+    "/bonuses/apply": {
+      "post": {
+        "tags": ["bonuses"],
+        "summary": "Apply bonuses to order",
+        "description": "Apply bonus points to order for discount",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/BonusApplyRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bonuses applied successfully",
+            "schema": {
+              "$ref": "#/definitions/BonusApplyResponse"
+            }
+          },
+          "400": {
+            "description": "Cannot apply bonuses",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [{"auth": ["write:bonuses"]}]
+      }
+    },
+    "/reviews": {
+      "post": {
+        "tags": ["reviews"],
+        "summary": "Create review",
+        "description": "Create review for completed order",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ReviewRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Review created successfully",
+            "schema": {
+              "$ref": "#/definitions/ReviewResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid review data",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [{"auth": ["write:reviews"]}]
+      }
+    },
+    "/analytics/load": {
+      "get": {
+        "tags": ["analytics"],
+        "summary": "Get car wash load statistics",
+        "description": "Returns load statistics for car washes",
+        "parameters": [
+          {
+            "name": "dateFrom",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "format": "date"
+          },
+          {
+            "name": "dateTo",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "format": "date"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/AnalyticsLoadResponse"
+            }
+          }
+        },
+        "security": [{"auth": ["read:analytics"]}]
+      }
+    },
+
     "/car/{carId}": {
       "get": {
-        "tags": [
-          "cars"
-        ],
-        "produces": [
-          "application/json"
-        ],
+        "tags": ["cars"],
+        "produces": ["application/json"],
         "responses": {
           "200": {
             "description": "successful operation",
@@ -33,22 +505,11 @@
             "description": "Invalid status value"
           }
         },
-        "security": [
-          {
-            "auth": [
-              "write:car",
-              "read:car"
-            ]
-          }
-        ]
+        "security": [{"auth": ["write:car", "read:car"]}]
       },
       "put": {
-        "tags": [
-          "cars"
-        ],
-        "produces": [
-          "application/json"
-        ],
+        "tags": ["cars"],
+        "produces": ["application/json"],
         "parameters": [
           {
             "in": "body",
@@ -79,22 +540,11 @@
             }
           }
         },
-        "security": [
-          {
-            "auth": [
-              "write:car",
-              "read:car"
-            ]
-          }
-        ]
+        "security": [{"auth": ["write:car", "read:car"]}]
       },
       "delete": {
-        "tags": [
-          "cars"
-        ],
-        "produces": [
-          "application/json"
-        ],
+        "tags": ["cars"],
+        "produces": ["application/json"],
         "responses": {
           "200": {
             "description": "successful operation"
@@ -112,24 +562,13 @@
             }
           }
         },
-        "security": [
-          {
-            "auth": [
-              "write:car",
-              "read:car"
-            ]
-          }
-        ]
+        "security": [{"auth": ["write:car", "read:car"]}]
       }
     },
     "/car": {
       "post": {
-        "tags": [
-          "cars"
-        ],
-        "produces": [
-          "application/json"
-        ],
+        "tags": ["cars"],
+        "produces": ["application/json"],
         "parameters": [
           {
             "in": "body",
@@ -154,24 +593,13 @@
             }
           }
         },
-        "security": [
-          {
-            "auth": [
-              "write:car",
-              "read:car"
-            ]
-          }
-        ]
+        "security": [{"auth": ["write:car", "read:car"]}]
       }
     },
     "/user/{userId}/cars": {
       "get": {
-        "tags": [
-          "cars"
-        ],
-        "produces": [
-          "application/json"
-        ],
+        "tags": ["cars"],
+        "produces": ["application/json"],
         "responses": {
           "200": {
             "description": "successful operation",
@@ -186,28 +614,14 @@
             "description": "Invalid status value"
           }
         },
-        "security": [
-          {
-            "auth": [
-              "write:car",
-              "read:car"
-            ]
-          }
-        ]
+        "security": [{"auth": ["write:car", "read:car"]}]
       }
     }
   },
   "definitions": {
     "CarCommonFields": {
       "type": "object",
-      "required": [
-        "vin",
-        "make",
-        "model",
-        "year",
-        "gosNumber",
-        "bodyType"
-      ],
+      "required": ["vin", "make", "model", "year", "gosNumber", "bodyType"],
       "properties": {
         "vin": {
           "type": "string",
@@ -236,17 +650,11 @@
       }
     },
     "CarRequest": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/CarCommonFields"
-        }
-      ]
+      "allOf": [{"$ref": "#/definitions/CarCommonFields"}]
     },
     "CarResponse": {
       "allOf": [
-        {
-          "$ref": "#/definitions/CarCommonFields"
-        },
+        {"$ref": "#/definitions/CarCommonFields"},
         {
           "type": "object",
           "properties": {
@@ -256,9 +664,7 @@
             },
             "users": {
               "type": "array",
-              "items": {
-                "$ref": "#/definitions/UserResponse"
-              },
+              "items": {"$ref": "#/definitions/UserResponse"},
               "description": "List of users associated with the car"
             },
             "createdAt": {
@@ -314,18 +720,568 @@
         },
         "messages": {
           "type": "array",
-          "properties": {
-            "code": {
-              "type": "integer",
-              "description": "internal error code"
-            },
-            "message": {
-              "type": "string",
-              "description": "Error message"
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "integer",
+                "description": "internal error code"
+              },
+              "message": {
+                "type": "string",
+                "description": "Error message"
+              }
             }
           },
-          "description": "Error message"
+          "description": "Error messages"
         }
+      }
+    },
+
+    "PhoneLoginRequest": {
+      "type": "object",
+      "required": ["phoneNumber"],
+      "properties": {
+        "phoneNumber": {
+          "type": "string",
+          "description": "Phone number in international format"
+        }
+      }
+    },
+    "VerifyCodeRequest": {
+      "type": "object",
+      "required": ["phoneNumber", "code"],
+      "properties": {
+        "phoneNumber": {
+          "type": "string",
+          "description": "Phone number"
+        },
+        "code": {
+          "type": "string",
+          "description": "SMS verification code"
+        }
+      }
+    },
+    "LoginResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "Status message"
+        },
+        "retryDelay": {
+          "type": "integer",
+          "description": "Seconds until next SMS can be sent"
+        }
+      }
+    },
+    "AuthResponse": {
+      "type": "object",
+      "properties": {
+        "accessToken": {
+          "type": "string",
+          "description": "JWT access token"
+        },
+        "refreshToken": {
+          "type": "string",
+          "description": "JWT refresh token"
+        },
+        "user": {
+          "$ref": "#/definitions/UserProfileResponse"
+        }
+      }
+    },
+    "UserProfileResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "User ID"
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "Phone number"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["client", "washer", "cashier", "accountant", "director"],
+          "description": "User role"
+        },
+        "rating": {
+          "type": "number",
+          "format": "float",
+          "description": "Client rating"
+        },
+        "isBlocked": {
+          "type": "boolean",
+          "description": "Is user blocked"
+        }
+      }
+    },
+    "CarWashResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Car wash ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Car wash name"
+        },
+        "address": {
+          "type": "string",
+          "description": "Physical address"
+        },
+        "workingHours": {
+          "$ref": "#/definitions/WorkingHours"
+        },
+        "boxesCount": {
+          "type": "integer",
+          "description": "Total number of boxes"
+        }
+      }
+    },
+    "WorkingHours": {
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "string",
+          "description": "Opening time (HH:MM)"
+        },
+        "close": {
+          "type": "string",
+          "description": "Closing time (HH:MM)"
+        }
+      }
+    },
+    "BoxAvailabilityResponse": {
+      "type": "object",
+      "properties": {
+        "boxId": {
+          "type": "string",
+          "description": "Box ID"
+        },
+        "boxNumber": {
+          "type": "integer",
+          "description": "Box number"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["online", "queue"],
+          "description": "Box type"
+        },
+        "availableSlots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TimeSlot"
+          }
+        }
+      }
+    },
+    "TimeSlot": {
+      "type": "object",
+      "properties": {
+        "startTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "isAvailable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ServiceResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Service ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Service name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Service description"
+        },
+        "basePrice": {
+          "type": "number",
+          "format": "float",
+          "description": "Base price"
+        },
+        "multipliers": {
+          "type": "object",
+          "properties": {
+            "car": {
+              "type": "number",
+              "format": "float",
+              "description": "Multiplier for car type (1.0)"
+            },
+            "jeep": {
+              "type": "number",
+              "format": "float",
+              "description": "Multiplier for jeep type (1.5)"
+            }
+          }
+        },
+        "category": {
+          "type": "string",
+          "enum": ["base", "additional", "special"],
+          "description": "Service category"
+        }
+      }
+    },
+    "OrderRequest": {
+      "type": "object",
+      "required": ["carwashId", "boxId", "carId", "services", "startTime"],
+      "properties": {
+        "carwashId": {
+          "type": "string",
+          "description": "Selected car wash ID"
+        },
+        "boxId": {
+          "type": "string",
+          "description": "Selected box ID"
+        },
+        "carId": {
+          "type": "string",
+          "description": "Customer's car ID"
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of service IDs"
+        },
+        "startTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Order start time"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["online", "cash"],
+          "description": "Payment method"
+        },
+        "promoCode": {
+          "type": "string",
+          "description": "Promo code for discount"
+        },
+        "useBonuses": {
+          "type": "boolean",
+          "description": "Use bonus points for discount"
+        }
+      }
+    },
+    "OrderResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Order ID"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["created", "paid", "in_progress", "completed", "cancelled"],
+          "description": "Order status"
+        },
+        "carwash": {
+          "$ref": "#/definitions/CarWashResponse"
+        },
+        "box": {
+          "$ref": "#/definitions/BoxResponse"
+        },
+        "car": {
+          "$ref": "#/definitions/CarResponse"
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ServiceResponse"
+          }
+        },
+        "totalAmount": {
+          "type": "number",
+          "format": "float",
+          "description": "Total order amount"
+        },
+        "finalAmount": {
+          "type": "number",
+          "format": "float",
+          "description": "Final amount after discounts"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "estimatedEndTime": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "BoxResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "number": {
+          "type": "integer"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["online", "queue"]
+        }
+      }
+    },
+    "OrderStatusUpdate": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["in_progress", "completed", "cancelled"]
+        },
+        "washerId": {
+          "type": "string",
+          "description": "Washer ID (for status updates)"
+        }
+      }
+    },
+    "PaymentRequest": {
+      "type": "object",
+      "required": ["method"],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": ["card", "apple_pay", "google_pay"]
+        },
+        "saveCard": {
+          "type": "boolean",
+          "description": "Save card for future payments"
+        }
+      }
+    },
+    "PaymentResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "transactionId": {
+          "type": "string"
+        },
+        "paymentUrl": {
+          "type": "string",
+          "description": "URL for redirect to payment page"
+        }
+      }
+    },
+    "PromotionResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "discountType": {
+          "type": "string",
+          "enum": ["percentage", "fixed", "special"]
+        },
+        "discountValue": {
+          "type": "number",
+          "format": "float"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "code": {
+          "type": "string",
+          "description": "Promo code"
+        }
+      }
+    },
+    "BonusBalanceResponse": {
+      "type": "object",
+      "properties": {
+        "balance": {
+          "type": "number",
+          "format": "float",
+          "description": "Available bonus points"
+        },
+        "nextBonus": {
+          "type": "number",
+          "format": "float",
+          "description": "Points needed for next reward"
+        }
+      }
+    },
+    "BonusApplyRequest": {
+      "type": "object",
+      "required": ["orderId", "points"],
+      "properties": {
+        "orderId": {
+          "type": "string"
+        },
+        "points": {
+          "type": "integer",
+          "description": "Points to apply"
+        }
+      }
+    },
+    "BonusApplyResponse": {
+      "type": "object",
+      "properties": {
+        "appliedPoints": {
+          "type": "integer"
+        },
+        "discountAmount": {
+          "type": "number",
+          "format": "float"
+        },
+        "remainingBalance": {
+          "type": "number",
+          "format": "float"
+        }
+      }
+    },
+    "ReviewRequest": {
+      "type": "object",
+      "required": ["orderId", "rating"],
+      "properties": {
+        "orderId": {
+          "type": "string"
+        },
+        "rating": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "comment": {
+          "type": "string"
+        },
+        "photos": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "binary"
+          },
+          "description": "Base64 encoded photos"
+        }
+      }
+    },
+    "ReviewResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "rating": {
+          "type": "integer"
+        },
+        "comment": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "AnalyticsLoadResponse": {
+      "type": "object",
+      "properties": {
+        "period": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string",
+              "format": "date"
+            },
+            "to": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        },
+        "carwashes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CarWashLoadStats"
+          }
+        },
+        "totalOrders": {
+          "type": "integer"
+        },
+        "utilizationRate": {
+          "type": "number",
+          "format": "float",
+          "description": "Average utilization rate in percentage"
+        }
+      }
+    },
+    "CarWashLoadStats": {
+      "type": "object",
+      "properties": {
+        "carwashId": {
+          "type": "string"
+        },
+        "carwashName": {
+          "type": "string"
+        },
+        "totalOrders": {
+          "type": "integer"
+        },
+        "utilization": {
+          "type": "number",
+          "format": "float"
+        },
+        "peakHours": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "Peak hours (HH:MM)"
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "auth": {
+      "type": "oauth2",
+      "flow": "implicit",
+      "authorizationUrl": "https://localhost:8080/v1/auth/authorize",
+      "scopes": {
+        "write:car": "Modify cars",
+        "read:car": "Read cars",
+        "write:orders": "Create and update orders",
+        "read:orders": "Read orders",
+        "write:users": "Modify users",
+        "read:users": "Read users",
+        "read:carwashes": "Read car washes",
+        "read:boxes": "Read boxes availability",
+        "read:services": "Read services",
+        "write:promotions": "Manage promotions",
+        "read:promotions": "Read promotions",
+        "write:bonuses": "Manage bonuses",
+        "read:bonuses": "Read bonuses",
+        "write:reviews": "Create reviews",
+        "read:reviews": "Read reviews",
+        "read:analytics": "Read analytics"
       }
     }
   }
